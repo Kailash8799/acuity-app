@@ -1,7 +1,6 @@
 package com.kailash.acuity.service;
 
-import com.kailash.acuity.service.IService.IAuthService;
-import org.springframework.stereotype.Service;
+public interface AuthService {
 
-@Service
-public class AuthService implements IAuthService {}
+    
+}

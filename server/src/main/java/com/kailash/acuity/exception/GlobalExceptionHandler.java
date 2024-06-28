@@ -6,6 +6,8 @@ import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -86,5 +88,33 @@ public class GlobalExceptionHandler {
       errors
     );
     return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiResponse<Object>> handleHttpMessageNotReadableException(
+    HttpMessageNotReadableException ex,
+    WebRequest request
+  ) {
+    ApiResponse<Object> response = new ApiResponse<>(
+      HttpStatus.BAD_REQUEST.value(),
+      "Required request body is missing",
+      false,
+      null
+    );
+    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(
+    AccessDeniedException ex,
+    WebRequest request
+  ) {
+    ApiResponse<Object> response = new ApiResponse<>(
+      HttpStatus.FORBIDDEN.value(),
+      "Access Denied",
+      false,
+      null
+    );
+    return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
   }
 }
