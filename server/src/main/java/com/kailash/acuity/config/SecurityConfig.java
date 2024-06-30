@@ -1,20 +1,25 @@
 package com.kailash.acuity.config;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
+import com.kailash.acuity.service.UserService;
+import com.kailash.acuity.utils.jwt.AuthEntryPointJwt;
+import com.kailash.acuity.utils.jwt.AuthTokenFilter;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.User.UserBuilder;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -24,30 +29,35 @@ public class SecurityConfig {
   @Autowired
   DataSource dataSource;
 
-  // @Bean
-  // PasswordEncoder passwordEncoder() {
-  //   return new BCryptPasswordEncoder();
-  // }
+  @Autowired
+  private AuthEntryPointJwt authEntryPointJwt;
+
+  @Autowired
+  private UserService userService;
+
+  @Bean
+  PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
+
+  @Bean
+  AuthTokenFilter authenticationJwtTokenFilter() {
+    return new AuthTokenFilter();
+  }
 
   @Bean
   UserDetailsService userDetailsService() {
-    UserBuilder user1 = User
-      .withUsername("user")
-      .password("{noop}user")
-      .roles("USER");
-    UserBuilder admin = User
-      .withUsername("admin")
-      .password("{noop}admin")
-      .roles("ADMIN");
-    JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager(
-      dataSource
-    );
-    jdbcUserDetailsManager.createUser(user1.build());
-    jdbcUserDetailsManager.createUser(admin.build());
+    return username -> userService.getUserForAuthByUsernameOrEmail(username);
+  }
 
-    // InMemoryUserDetailsManager inMemoryUserDetailsManager = new InMemoryUserDetailsManager(user1.build(), admin.build());
+  @Bean
+  AuthenticationProvider authenticationProvider() {
+    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
 
-    return jdbcUserDetailsManager;
+    authProvider.setUserDetailsService(userDetailsService());
+    authProvider.setPasswordEncoder(passwordEncoder());
+
+    return authProvider;
   }
 
   @Bean
@@ -58,6 +68,12 @@ public class SecurityConfig {
       .sessionManagement(session ->
         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
       )
+      .headers(headers ->
+        headers.frameOptions(frameOptions -> frameOptions.sameOrigin())
+      )
+      .exceptionHandling(exception ->
+        exception.authenticationEntryPoint(authEntryPointJwt)
+      )
       .authorizeHttpRequests(requests ->
         requests
           .requestMatchers("/api/v1/auth/**")
@@ -65,7 +81,18 @@ public class SecurityConfig {
           .anyRequest()
           .authenticated()
       );
-    http.httpBasic(withDefaults());
+
+    http.addFilterBefore(
+      authenticationJwtTokenFilter(),
+      UsernamePasswordAuthenticationFilter.class
+    );
     return http.build();
+  }
+
+  @Bean
+  AuthenticationManager authenticationManager(
+    AuthenticationConfiguration builder
+  ) throws Exception {
+    return builder.getAuthenticationManager();
   }
 }

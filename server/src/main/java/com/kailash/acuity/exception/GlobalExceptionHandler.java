@@ -17,20 +17,6 @@ import org.springframework.web.context.request.WebRequest;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<ApiResponse<Object>> handleAllExceptions(
-    Exception ex,
-    WebRequest request
-  ) {
-    ApiResponse<Object> response = new ApiResponse<>(
-      HttpStatus.INTERNAL_SERVER_ERROR.value(),
-      ex.getMessage(),
-      false,
-      null
-    );
-    return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-  }
-
   @ExceptionHandler(ResourceNotFoundException.class)
   public ResponseEntity<ApiResponse<Object>> handleResourceNotFoundException(
     ResourceNotFoundException ex,
@@ -51,7 +37,7 @@ public class GlobalExceptionHandler {
     WebRequest request
   ) {
     ApiResponse<Object> response = new ApiResponse<>(
-      HttpStatus.NOT_FOUND.value(),
+      HttpStatus.BAD_REQUEST.value(),
       ex.getMessage(),
       false,
       null
@@ -63,7 +49,8 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolationException(
     DataIntegrityViolationException ex
   ) {
-    String message = "Duplicate entry. The provided email already exists.";
+    String message =
+      "Duplicate entry. The provided email or username already exists.";
     ApiResponse<Object> response = new ApiResponse<>(
       409, // Conflict
       message,
@@ -116,5 +103,19 @@ public class GlobalExceptionHandler {
       null
     );
     return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ApiResponse<Object>> handleAllExceptions(
+    Exception ex,
+    WebRequest request
+  ) {
+    ApiResponse<Object> response = new ApiResponse<>(
+      HttpStatus.INTERNAL_SERVER_ERROR.value(),
+      ex.getMessage(),
+      false,
+      null
+    );
+    return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
