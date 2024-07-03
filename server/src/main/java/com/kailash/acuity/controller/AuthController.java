@@ -28,7 +28,7 @@ public class AuthController {
   ) {
     String token = authService.signin(loginDTO);
     Map<String, String> data = Map.of("token", token);
-    ApiResponse<Object> response = new ApiResponse<Object>(
+    ApiResponse<Object> response = new ApiResponse<>(
       200,
       "User login successful",
       true,
@@ -42,7 +42,7 @@ public class AuthController {
     @Valid @RequestBody SignupDTO signupDTO
   ) {
     authService.signup(signupDTO);
-    ApiResponse<Object> response = new ApiResponse<Object>(
+    ApiResponse<Object> response = new ApiResponse<>(
       201,
       "User created successfully",
       true,

@@ -1,4 +1,4 @@
-package com.kailash.acuity.service.Impl;
+package com.kailash.acuity.service.impl;
 
 import com.kailash.acuity.dto.auth.LoginDTO;
 import com.kailash.acuity.dto.auth.SignupDTO;

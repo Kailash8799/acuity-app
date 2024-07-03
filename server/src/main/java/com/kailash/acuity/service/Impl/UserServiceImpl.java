@@ -1,4 +1,4 @@
-package com.kailash.acuity.service.Impl;
+package com.kailash.acuity.service.impl;
 
 import com.kailash.acuity.dto.user.UserDTO;
 import com.kailash.acuity.exception.BadRequestException;
@@ -6,6 +6,7 @@ import com.kailash.acuity.exception.ResourceNotFoundException;
 import com.kailash.acuity.mapper.UserMapper;
 import com.kailash.acuity.model.User;
 import com.kailash.acuity.repository.UserRepository;
+import com.kailash.acuity.service.RedisService;
 import com.kailash.acuity.service.UserService;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -15,10 +16,16 @@ public class UserServiceImpl implements UserService {
 
   UserRepository userRepository;
   UserMapper userMapper;
+  RedisService redisService;
 
-  public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
+  public UserServiceImpl(
+    UserRepository userRepository,
+    UserMapper userMapper,
+    RedisService redisService
+  ) {
     this.userRepository = userRepository;
     this.userMapper = userMapper;
+    this.redisService = redisService;
   }
 
   @Override
