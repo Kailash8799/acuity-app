@@ -148,6 +148,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>acuity-crm</finalName>
 	</build>
 
 </project>

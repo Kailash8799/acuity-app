@@ -1,13 +1,67 @@
 version: "3.8"
 
 services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql-container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: acuityCRM
+      MYSQL_USER: acuityUser
+      MYSQL_PASSWORD: acuityPassword
+    ports:
+      - "3306:3306"
+    networks:
+      - acuity-network
+    volumes:
+      - acuity-data:/var/lib/mysql
+
+  acuity:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: acuity-container
+    ports:
+      - "8080:8080"
+    networks:
+      - acuity-network
+    environment:
+      SPRING_APPLICATION_NAME: acuity
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/acuityCRM?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+      SPRING_JPA_DATABASE: MYSQL
+      SPRING_APP_JWTSECRET: YLgegsRlaFvZUwVRA5vre8dolY34NizRRrdhT7TO6DCLhEHtAAXsdVL0ZUZrsOFEfXfrnivzzbu4Jn1VPkut4A2w
+      SPRING_APP_JWTEXPIRATIONMS: 864000000
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      SPRING_KAFKA_CONSUMER_GROUP_ID: acuity
+      SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET: earliest
+      SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: org.apache.kafka.common.serialization.StringDeserializer
+      SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: org.apache.kafka.common.serialization.StringDeserializer
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+    depends_on:
+      - kafka
+      - redis
+      - mysql
+ 
   zookeeper:
     image: wurstmeister/zookeeper:latest
     container_name: zookeeper-container
     ports:
       - "2181:2181"
     networks:
-      - redis-network
+      - acuity-network
 
   kafka:
     image: wurstmeister/kafka:latest
@@ -23,10 +77,10 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
     networks:
-      - redis-network
+      - acuity-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      
+
   redis:
     image: redis:latest
     container_name: redis-container
@@ -35,9 +89,9 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/data
+      - acuity-data:/data
     networks:
-      - redis-network
+      - acuity-network
     command: ["redis-server", "--appendonly", "yes"]
 
   redis-commander:
@@ -50,12 +104,12 @@ services:
     ports:
       - "8081:8081"
     networks:
-      - redis-network
+      - acuity-network
 
 volumes:
-  redis-data:
+  acuity-data:
     driver: local
 
 networks:
-  redis-network:
+  acuity-network:
     driver: bridge
